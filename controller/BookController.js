@@ -11,7 +11,10 @@ const allBooks = (req, res) => {
     // offset : limit * (currentPage-1) ex. 0, 3, 6 ...
     let offset = limit * (currentPage - 1);
 
-    let sql = "SELECT *, (SELECT count(*) FROM likes WHERE liked_book_id=books.id) AS likes FROM books";
+    let sql = `SELECT SQL_CALC_FOUND_ROWS * FROM BookShop.books 
+                LIMIT 4 OFFSET 0;`
+
+    //let sql = "SELECT *, (SELECT count(*) FROM likes WHERE liked_book_id=books.id) AS likes FROM books";
     let values = [];
 
     if (category_id && news) {
@@ -25,6 +28,25 @@ const allBooks = (req, res) => {
     }
     
     sql += " LIMIT ? OFFSET ?";
+    values.push(parseInt(limit), parseInt(offset));
+
+    conn.query(sql, values, 
+        (err, results) => {
+            if (err) {
+                console.log(err);
+                return res.status(StatusCodes.BAD_REQUEST).end();
+            }
+            
+            // result 값이 배열로 날라오므로
+            if (results.length) {
+                return res.status(StatusCodes.OK).json(results);
+            } else {
+                return res.status(StatusCodes.NOT_FOUND).end();
+            }
+    })
+
+
+    sql += "SELECT found_rows();";
     values.push(parseInt(limit), parseInt(offset));
 
     conn.query(sql, values, 
